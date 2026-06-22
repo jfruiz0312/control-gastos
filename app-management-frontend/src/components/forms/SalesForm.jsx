@@ -73,14 +73,12 @@ export default function SalesForm({ products, onSubmit }) {
   const submitHandler = async (values) => {
     await onSubmit({
       cliente: values.cliente,
+      fechaVenta: new Date().toISOString(),
       detalles: values.detalles.map((item) => ({
         productoId: item.producto?.id,
         cantidad: Number(item.cantidad),
-        precioVenta: Number(item.precioVenta),
+        precioVentaUnitario: Number(item.precioVenta),
       })),
-      subtotal,
-      total,
-      gananciaEstimada,
     });
 
     reset(defaultValues);
@@ -132,6 +130,7 @@ export default function SalesForm({ products, onSubmit }) {
                         onChange={(_, value) => {
                           controllerField.onChange(value);
                         }}
+                        isOptionEqualToValue={(option, value) => option.id === value.id}
                         getOptionLabel={(option) => option?.nombre || ''}
                         renderInput={(params) => (
                           <TextField

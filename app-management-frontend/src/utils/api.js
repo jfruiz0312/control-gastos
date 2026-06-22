@@ -1,30 +1,52 @@
-export function extractCollection(payload, fallbackKeys = []) {
-  if (Array.isArray(payload)) {
-    return payload;
+export function unwrapApiResponse(payload) {
+  if (payload && typeof payload === 'object' && 'success' in payload && 'data' in payload) {
+    return payload.data;
   }
 
-  if (!payload || typeof payload !== 'object') {
+  return payload;
+}
+
+export function extractCollection(payload, fallbackKeys = []) {
+  const normalizedPayload = unwrapApiResponse(payload);
+
+  if (Array.isArray(normalizedPayload)) {
+    return normalizedPayload;
+  }
+
+  if (!normalizedPayload || typeof normalizedPayload !== 'object') {
     return [];
   }
 
   const candidates = ['content', 'items', 'data', 'results', ...fallbackKeys];
-  const match = candidates.find((key) => Array.isArray(payload[key]));
+  const match = candidates.find((key) => Array.isArray(normalizedPayload[key]));
 
-  return match ? payload[match] : [];
+  return match ? normalizedPayload[match] : [];
 }
 
 export function extractItem(payload, fallbackKeys = []) {
-  if (!payload || typeof payload !== 'object') {
-    return payload;
+  const normalizedPayload = unwrapApiResponse(payload);
+
+  if (!normalizedPayload || typeof normalizedPayload !== 'object') {
+    return normalizedPayload;
   }
 
   const candidates = ['data', 'item', 'result', ...fallbackKeys];
-  const match = candidates.find((key) => payload[key] && typeof payload[key] === 'object');
+  const match = candidates.find((key) => normalizedPayload[key] && typeof normalizedPayload[key] === 'object');
 
-  return match ? payload[match] : payload;
+  return match ? normalizedPayload[match] : normalizedPayload;
 }
 
 export function getErrorMessage(error) {
+  const validationErrors = error?.response?.data?.data;
+
+  if (validationErrors && typeof validationErrors === 'object' && !Array.isArray(validationErrors)) {
+    const firstEntry = Object.entries(validationErrors)[0];
+
+    if (firstEntry) {
+      return `${firstEntry[0]}: ${firstEntry[1]}`;
+    }
+  }
+
   return (
     error?.response?.data?.message ||
     error?.response?.data?.error ||

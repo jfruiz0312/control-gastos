@@ -11,17 +11,17 @@ import { formatCurrency, formatDateTime } from '../utils/formatters';
 
 const normalizeProduct = (item, index) => ({
   id: item.id ?? item.codigo ?? `${index + 1}`,
-  nombre: item.nombre ?? item.name ?? '',
-  precioCompra: Number(item.precioCompra ?? item.purchasePrice ?? 0),
+  nombre: item.nombre ?? '',
+  precioCompra: Number(item.precioCompra ?? 0),
 });
 
 const normalizePurchase = (item, index) => ({
-  id: item.id ?? item.compraId ?? `${index + 1}`,
-  proveedor: item.proveedor ?? item.nombreProveedor ?? 'Proveedor',
-  fecha: item.fecha ?? item.createdAt,
-  totalCompra: Number(item.totalCompra ?? item.total ?? 0),
-  costoOperativo: Number(item.costoOperativo ?? item.gastosOperativos ?? 0),
-  costoReal: Number(item.costoReal ?? item.totalReal ?? 0),
+  id: item.id ?? `${index + 1}`,
+  proveedor: item.proveedor ?? 'Proveedor',
+  fecha: item.fechaCompra,
+  totalCompra: Number(item.subtotalCompra ?? 0),
+  costoOperativo: Number(item.totalGastosAsociados ?? 0),
+  costoReal: Number(item.totalCompra ?? 0),
 });
 
 export default function Compras() {

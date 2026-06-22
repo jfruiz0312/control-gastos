@@ -10,12 +10,3 @@ export async function registrarGasto(payload) {
   const response = await api.post('/gastos', payload);
   return extractItem(response.data, ['gasto']);
 }
-
-export async function actualizarGasto(id, payload) {
-  const response = await api.put(`/gastos/${id}`, payload);
-  return extractItem(response.data, ['gasto']);
-}
-
-export async function eliminarGasto(id) {
-  return api.delete(`/gastos/${id}`);
-}

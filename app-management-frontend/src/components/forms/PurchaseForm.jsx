@@ -19,6 +19,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import dayjs from 'dayjs';
 import { formatCurrency } from '../../utils/formatters';
+import { buildAssociatedExpenses } from '../../utils/catalogs';
 
 const schema = yup.object({
   proveedor: yup.string().required('El proveedor es obligatorio'),
@@ -93,23 +94,17 @@ export default function PurchaseForm({ products, onSubmit }) {
   const costoReal = totalCompra + costoOperativo;
 
   const submitHandler = async (values) => {
+    const fechaCompra = values.fecha?.toISOString?.() || values.fecha;
+
     await onSubmit({
       proveedor: values.proveedor,
-      fecha: values.fecha?.toISOString?.() || values.fecha,
+      fechaCompra,
       detalles: values.detalles.map((item) => ({
         productoId: item.producto?.id,
         cantidad: Number(item.cantidad),
         precioUnitario: Number(item.precioUnitario),
       })),
-      gastosAsociados: {
-        transporte: Number(values.gastosAsociados.transporte),
-        alimentacion: Number(values.gastosAsociados.alimentacion),
-        envio: Number(values.gastosAsociados.envio),
-        otros: Number(values.gastosAsociados.otros),
-      },
-      totalCompra,
-      costoOperativo,
-      costoReal,
+      gastosAsociados: buildAssociatedExpenses(values.gastosAsociados, fechaCompra),
     });
 
     reset(defaultValues);
@@ -186,6 +181,7 @@ export default function PurchaseForm({ products, onSubmit }) {
                         options={products}
                         value={controllerField.value}
                         onChange={(_, value) => controllerField.onChange(value)}
+                        isOptionEqualToValue={(option, value) => option.id === value.id}
                         getOptionLabel={(option) => option?.nombre || ''}
                         renderInput={(params) => (
                           <TextField

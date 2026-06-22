@@ -3,12 +3,19 @@ import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
 import { Chip, IconButton, Paper, Stack, Tooltip } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { formatCurrency, formatNumber, getStatusChipColor } from '../../utils/formatters';
+import { getCatalogLabel, PRODUCT_CATEGORY_OPTIONS } from '../../utils/catalogs';
 
 export default function ProductTable({ rows, onEdit, onDelete }) {
   const columns = [
     { field: 'codigo', headerName: 'Código', flex: 1, minWidth: 120 },
     { field: 'nombre', headerName: 'Nombre', flex: 1.5, minWidth: 180 },
-    { field: 'categoria', headerName: 'Categoría', flex: 1, minWidth: 140 },
+    {
+      field: 'categoria',
+      headerName: 'Categoría',
+      flex: 1,
+      minWidth: 140,
+      valueFormatter: (value) => getCatalogLabel(PRODUCT_CATEGORY_OPTIONS, value, value || '—'),
+    },
     {
       field: 'precioCompra',
       headerName: 'Precio compra',

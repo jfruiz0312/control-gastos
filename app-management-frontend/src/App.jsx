@@ -4,6 +4,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import AppRoutes from './routes/AppRoutes';
 import { AppProvider, useAppContext } from './context/AppContext';
+import { AuthProvider } from './context/AuthContext';
 import GlobalLoader from './components/common/GlobalLoader';
 import AppSnackbar from './components/common/AppSnackbar';
 
@@ -26,8 +27,10 @@ function AppShell() {
 
 export default function App() {
   return (
-    <AppProvider>
-      <AppShell />
-    </AppProvider>
+    <AuthProvider>
+      <AppProvider>
+        <AppShell />
+      </AppProvider>
+    </AuthProvider>
   );
 }

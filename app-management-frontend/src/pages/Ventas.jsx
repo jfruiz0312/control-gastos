@@ -11,18 +11,20 @@ import { formatCurrency, formatDateTime } from '../utils/formatters';
 
 const normalizeProduct = (item, index) => ({
   id: item.id ?? item.codigo ?? `${index + 1}`,
-  nombre: item.nombre ?? item.name ?? '',
-  precioCompra: Number(item.precioCompra ?? item.purchasePrice ?? 0),
-  precioVenta: Number(item.precioVenta ?? item.salePrice ?? 0),
+  nombre: item.nombre ?? '',
+  precioCompra: Number(item.precioCompra ?? 0),
+  precioVenta: Number(item.precioVenta ?? 0),
 });
 
 const normalizeSale = (item, index) => ({
-  id: item.id ?? item.ventaId ?? `${index + 1}`,
-  cliente: item.cliente ?? item.nombreCliente ?? 'Cliente general',
-  fecha: item.fecha ?? item.createdAt,
-  subtotal: Number(item.subtotal ?? item.total ?? 0),
-  total: Number(item.total ?? item.totalVenta ?? 0),
-  gananciaEstimada: Number(item.gananciaEstimada ?? item.ganancia ?? 0),
+  id: item.id ?? `${index + 1}`,
+  cliente: item.cliente ?? 'Cliente general',
+  fecha: item.fechaVenta,
+  subtotal: Number(
+    item.detalles?.reduce((total, detail) => total + Number(detail.subtotalVenta ?? 0), 0) ?? item.totalVenta ?? 0,
+  ),
+  total: Number(item.totalVenta ?? 0),
+  gananciaEstimada: Number(item.gananciaTotal ?? 0),
 });
 
 export default function Ventas() {

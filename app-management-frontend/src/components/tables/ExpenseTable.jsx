@@ -3,10 +3,17 @@ import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
 import { IconButton, Paper, Stack, Tooltip } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { formatCurrency, formatDate } from '../../utils/formatters';
+import { EXPENSE_TYPE_OPTIONS, getCatalogLabel } from '../../utils/catalogs';
 
 export default function ExpenseTable({ rows, onEdit, onDelete }) {
   const columns = [
-    { field: 'tipoGasto', headerName: 'Tipo de gasto', flex: 1, minWidth: 160 },
+    {
+      field: 'tipoGasto',
+      headerName: 'Tipo de gasto',
+      flex: 1,
+      minWidth: 160,
+      valueFormatter: (value) => getCatalogLabel(EXPENSE_TYPE_OPTIONS, value, value || '—'),
+    },
     { field: 'descripcion', headerName: 'Descripción', flex: 2, minWidth: 220 },
     {
       field: 'fecha',
@@ -22,7 +29,10 @@ export default function ExpenseTable({ rows, onEdit, onDelete }) {
       minWidth: 140,
       valueFormatter: (value) => formatCurrency(value),
     },
-    {
+  ];
+
+  if (onEdit && onDelete) {
+    columns.push({
       field: 'acciones',
       headerName: 'Acciones',
       width: 120,
@@ -42,8 +52,8 @@ export default function ExpenseTable({ rows, onEdit, onDelete }) {
           </Tooltip>
         </Stack>
       ),
-    },
-  ];
+    });
+  }
 
   return (
     <Paper sx={{ height: 520, p: 1.5 }}>

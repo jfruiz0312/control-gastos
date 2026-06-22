@@ -20,10 +20,13 @@ import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
 import DarkModeRoundedIcon from '@mui/icons-material/DarkModeRounded';
 import LightModeRoundedIcon from '@mui/icons-material/LightModeRounded';
 import AccountBalanceWalletRoundedIcon from '@mui/icons-material/AccountBalanceWalletRounded';
+import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
+import { Avatar, Button } from '@mui/material';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
 import { navigationItems } from '../../utils/navigation';
 import { useAppContext } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
 
 const drawerWidth = 280;
 const collapsedWidth = 88;
@@ -33,6 +36,7 @@ export default function MainLayout() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { mode, toggleColorMode } = useAppContext();
+  const { user, logout } = useAuth();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -133,11 +137,51 @@ export default function MainLayout() {
               </Typography>
             </Box>
           </Stack>
-          <Tooltip title={mode === 'light' ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro'}>
-            <IconButton onClick={toggleColorMode}>
-              {mode === 'light' ? <DarkModeRoundedIcon /> : <LightModeRoundedIcon />}
-            </IconButton>
-          </Tooltip>
+          <Stack direction="row" spacing={1} alignItems="center">
+            {!isMobile && (
+              <Stack direction="row" spacing={1.25} alignItems="center" sx={{ mr: 1 }}>
+                <Avatar sx={{ width: 36, height: 36, bgcolor: 'primary.main' }}>
+                  {(user || 'U').slice(0, 1).toUpperCase()}
+                </Avatar>
+                <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
+                  <Typography variant="body2" fontWeight={600}>
+                    {user || 'Usuario'}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Sesión activa
+                  </Typography>
+                </Box>
+              </Stack>
+            )}
+            <Tooltip title={mode === 'light' ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro'}>
+              <IconButton onClick={toggleColorMode}>
+                {mode === 'light' ? <DarkModeRoundedIcon /> : <LightModeRoundedIcon />}
+              </IconButton>
+            </Tooltip>
+            <Button
+              color="inherit"
+              startIcon={<LogoutRoundedIcon />}
+              onClick={() => {
+                logout();
+                navigate('/login', { replace: true });
+              }}
+              sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
+            >
+              Salir
+            </Button>
+            {isMobile && (
+              <Tooltip title="Cerrar sesión">
+                <IconButton
+                  onClick={() => {
+                    logout();
+                    navigate('/login', { replace: true });
+                  }}
+                >
+                  <LogoutRoundedIcon />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Stack>
         </Toolbar>
       </AppBar>
 

@@ -8,10 +8,10 @@ export async function obtenerReporteGanancias() {
 
 export async function obtenerReporteInventario() {
   const response = await api.get('/reportes/inventario');
-  return extractCollection(response.data, ['inventario']);
+  return extractItem(response.data, ['inventario']);
 }
 
 export async function obtenerReporteVentas() {
   const response = await api.get('/reportes/ventas');
-  return extractCollection(response.data, ['ventas']);
+  return extractItem(response.data, ['ventas']);
 }

@@ -43,10 +43,10 @@ export default function Dashboard() {
   });
 
   const metrics = useMemo(() => {
-    const totalCompras = sumBy(data.compras, (item) => item.totalCompra ?? item.total ?? item.montoTotal);
-    const totalVentas = sumBy(data.ventas, (item) => item.total ?? item.totalVenta);
-    const gastosOperativos = sumBy(data.gastos, (item) => item.monto ?? item.valor);
-    const inventario = sumBy(data.productos, (item) => item.stock ?? item.existencias ?? 0);
+    const totalCompras = sumBy(data.compras, (item) => item.totalCompra ?? 0);
+    const totalVentas = sumBy(data.ventas, (item) => item.totalVenta ?? 0);
+    const gastosOperativos = sumBy(data.gastos, (item) => item.monto ?? 0);
+    const inventario = sumBy(data.productos, (item) => item.stockActual ?? 0);
     const gananciaNeta = totalVentas - totalCompras - gastosOperativos;
 
     return { totalCompras, totalVentas, gastosOperativos, inventario, gananciaNeta };
@@ -56,8 +56,8 @@ export default function Dashboard() {
     () =>
       monthKeys.map((key) =>
         sumBy(
-          data.ventas.filter((item) => dayjs(item.fecha ?? item.createdAt).format('YYYY-MM') === key),
-          (item) => item.total ?? item.totalVenta,
+          data.ventas.filter((item) => dayjs(item.fechaVenta).format('YYYY-MM') === key),
+          (item) => item.totalVenta,
         ),
       ),
     [data.ventas],
@@ -67,8 +67,8 @@ export default function Dashboard() {
     () =>
       monthKeys.map((key) =>
         sumBy(
-          data.gastos.filter((item) => dayjs(item.fecha ?? item.createdAt).format('YYYY-MM') === key),
-          (item) => item.monto ?? item.valor,
+          data.gastos.filter((item) => dayjs(item.fecha).format('YYYY-MM') === key),
+          (item) => item.monto,
         ),
       ),
     [data.gastos],
@@ -76,22 +76,28 @@ export default function Dashboard() {
 
   const salesRows = useMemo(
     () =>
-      data.ventas.slice(0, 5).map((item, index) => ({
+      [...data.ventas]
+        .sort((left, right) => dayjs(right.fechaVenta).valueOf() - dayjs(left.fechaVenta).valueOf())
+        .slice(0, 5)
+        .map((item, index) => ({
         id: getId(item, index),
-        cliente: item.cliente ?? item.nombreCliente ?? 'Cliente general',
-        fecha: item.fecha ?? item.createdAt,
-        total: item.total ?? item.totalVenta ?? 0,
+        cliente: item.cliente ?? 'Cliente general',
+        fecha: item.fechaVenta,
+        total: item.totalVenta ?? 0,
       })),
     [data.ventas],
   );
 
   const purchaseRows = useMemo(
     () =>
-      data.compras.slice(0, 5).map((item, index) => ({
+      [...data.compras]
+        .sort((left, right) => dayjs(right.fechaCompra).valueOf() - dayjs(left.fechaCompra).valueOf())
+        .slice(0, 5)
+        .map((item, index) => ({
         id: getId(item, index),
-        proveedor: item.proveedor ?? item.nombreProveedor ?? 'Proveedor',
-        fecha: item.fecha ?? item.createdAt,
-        total: item.totalCompra ?? item.total ?? 0,
+        proveedor: item.proveedor ?? 'Proveedor',
+        fecha: item.fechaCompra,
+        total: item.totalCompra ?? 0,
       })),
     [data.compras],
   );

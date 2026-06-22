@@ -11,14 +11,15 @@ import useAsyncData from '../hooks/useAsyncData';
 
 const normalizeProduct = (item, index) => ({
   id: item.id ?? item.codigo ?? `${index + 1}`,
-  codigo: item.codigo ?? item.code ?? '',
-  nombre: item.nombre ?? item.name ?? '',
-  descripcion: item.descripcion ?? item.description ?? '',
-  categoria: item.categoria ?? item.category ?? 'General',
-  precioCompra: Number(item.precioCompra ?? item.purchasePrice ?? 0),
-  precioVenta: Number(item.precioVenta ?? item.salePrice ?? 0),
-  stock: Number(item.stock ?? item.existencias ?? 0),
-  estado: Boolean(item.estado ?? item.activo ?? true),
+  codigo: item.codigo ?? '',
+  nombre: item.nombre ?? '',
+  descripcion: item.descripcion ?? '',
+  categoria: item.categoriaProducto ?? '',
+  precioCompra: Number(item.precioCompra ?? 0),
+  precioVenta: Number(item.precioVenta ?? 0),
+  stock: Number(item.stockActual ?? 0),
+  stockMinimo: Number(item.stockMinimo ?? 0),
+  estado: Boolean(item.activo ?? true),
 });
 
 export default function Productos() {
@@ -49,11 +50,12 @@ export default function Productos() {
       codigo: formValues.codigo,
       nombre: formValues.nombre,
       descripcion: formValues.descripcion,
-      categoria: formValues.categoria,
+      categoriaProducto: formValues.categoria,
       precioCompra: Number(formValues.precioCompra),
       precioVenta: Number(formValues.precioVenta),
-      stock: Number(formValues.stock),
-      estado: Boolean(formValues.estado),
+      stockActual: Number(formValues.stock),
+      stockMinimo: Number(formValues.stockMinimo),
+      activo: Boolean(formValues.estado),
     };
 
     if (selectedProduct?.id) {

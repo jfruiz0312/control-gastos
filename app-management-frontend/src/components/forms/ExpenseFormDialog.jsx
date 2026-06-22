@@ -5,6 +5,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import dayjs from 'dayjs';
+import { EXPENSE_TYPE_OPTIONS } from '../../utils/catalogs';
 
 const expenseSchema = yup.object({
   tipoGasto: yup.string().required('El tipo de gasto es obligatorio'),
@@ -23,8 +24,6 @@ const defaultValues = {
   fecha: dayjs(),
   monto: '',
 };
-
-const expenseTypes = ['Transporte', 'Alimentación', 'Envío', 'Servicios', 'Arriendo', 'Otros'];
 
 export default function ExpenseFormDialog({ open, initialValues, onClose, onSubmit }) {
   const {
@@ -66,9 +65,9 @@ export default function ExpenseFormDialog({ open, initialValues, onClose, onSubm
                   error={Boolean(errors.tipoGasto)}
                   helperText={errors.tipoGasto?.message}
                 >
-                  {expenseTypes.map((option) => (
-                    <MenuItem key={option} value={option}>
-                      {option}
+                  {EXPENSE_TYPE_OPTIONS.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
                     </MenuItem>
                   ))}
                 </TextField>

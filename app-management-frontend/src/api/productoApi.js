@@ -6,6 +6,11 @@ export async function obtenerProductos() {
   return extractCollection(response.data, ['productos']);
 }
 
+export async function obtenerProductosStockBajo() {
+  const response = await api.get('/productos/stock-bajo');
+  return extractCollection(response.data, ['productos']);
+}
+
 export async function obtenerProducto(id) {
   const response = await api.get(`/productos/${id}`);
   return extractItem(response.data, ['producto']);

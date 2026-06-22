@@ -1,91 +1,103 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Box, Card, CardContent, Grid, Stack, Tab, Tabs, Typography } from '@mui/material';
 import { BarChart, PieChart } from '@mui/x-charts';
-import dayjs from 'dayjs';
+import { obtenerGastos } from '../api/gastoApi';
 import { obtenerReporteGanancias, obtenerReporteInventario, obtenerReporteVentas } from '../api/reporteApi';
 import PageHeader from '../components/common/PageHeader';
 import useAsyncData from '../hooks/useAsyncData';
-import { formatCurrency, formatNumber, sumBy } from '../utils/formatters';
+import { EXPENSE_TYPE_OPTIONS, getCatalogLabel } from '../utils/catalogs';
+import { formatCurrency, formatNumber } from '../utils/formatters';
 
 const normalizeInventoryReport = (item, index) => ({
   id: item.id ?? item.codigo ?? `${index + 1}`,
-  producto: item.producto ?? item.nombre ?? `Producto ${index + 1}`,
-  existencias: Number(item.existencias ?? item.stock ?? 0),
-});
-
-const normalizeSalesReport = (item, index) => ({
-  id: item.id ?? item.codigo ?? `${index + 1}`,
-  producto: item.producto ?? item.nombre ?? `Producto ${index + 1}`,
-  cantidad: Number(item.cantidad ?? item.totalVendido ?? 0),
-  total: Number(item.total ?? item.monto ?? 0),
+  producto: item.nombre ?? `Producto ${index + 1}`,
+  existencias: Number(item.stockActual ?? 0),
+  stockMinimo: Number(item.stockMinimo ?? 0),
 });
 
 export default function Reportes() {
   const [tab, setTab] = useState(0);
 
   const loadReports = useCallback(async () => {
-    const [ganancias, inventario, ventas] = await Promise.all([
+    const [ganancias, inventario, ventas, gastos] = await Promise.all([
       obtenerReporteGanancias(),
       obtenerReporteInventario(),
       obtenerReporteVentas(),
+      obtenerGastos(),
     ]);
 
     return {
       ganancias,
-      inventario: inventario.map(normalizeInventoryReport),
-      ventas: ventas.map(normalizeSalesReport),
+      inventario: {
+        ...inventario,
+        productosStockBajo: (inventario?.productosStockBajo || []).map(normalizeInventoryReport),
+      },
+      ventas,
+      gastos,
     };
   }, []);
 
   const { data } = useAsyncData(loadReports, {
     initialData: {
       ganancias: {},
-      inventario: [],
-      ventas: [],
+      inventario: {},
+      ventas: {},
+      gastos: [],
     },
   });
 
-  const monthlyProfit = useMemo(() => {
-    if (Array.isArray(data.ganancias?.mensual)) {
-      return data.ganancias.mensual;
-    }
+  const profitBars = useMemo(
+    () => [
+      { periodo: 'Histórica', valor: Number(data.ganancias?.gananciaTotalHistorica ?? 0) },
+      { periodo: 'Mensual', valor: Number(data.ganancias?.gananciaMensualActual ?? 0) },
+      { periodo: 'Anual', valor: Number(data.ganancias?.gananciaAnualActual ?? 0) },
+    ],
+    [data.ganancias],
+  );
 
-    return Array.from({ length: 6 }).map((_, index) => ({
-      periodo: dayjs().subtract(5 - index, 'month').format('MMM YY'),
-      valor: Number(data.ganancias?.gananciaMensual ?? 0),
-    }));
-  }, [data.ganancias]);
-
-  const annualProfit = Number(data.ganancias?.gananciaAnual ?? sumBy(monthlyProfit, (item) => item.valor));
-  const monthlyTotal = Number(data.ganancias?.gananciaMensual ?? monthlyProfit.at(-1)?.valor ?? 0);
+  const annualProfit = Number(data.ganancias?.gananciaAnualActual ?? 0);
+  const monthlyTotal = Number(data.ganancias?.gananciaMensualActual ?? 0);
 
   const bestSelling = useMemo(
     () =>
-      [...data.ventas]
-        .sort((a, b) => b.cantidad - a.cantidad)
+      [...(data.ganancias?.gananciasPorProducto || [])]
+        .sort((a, b) => Number(b.unidadesVendidas ?? 0) - Number(a.unidadesVendidas ?? 0))
         .slice(0, 5)
-        .map((item) => ({ label: item.producto, value: item.cantidad })),
-    [data.ventas],
+        .map((item) => ({
+          label: item.nombreProducto,
+          value: Number(item.unidadesVendidas ?? 0),
+          gain: Number(item.gananciaTotal ?? 0),
+        })),
+    [data.ganancias],
   );
 
   const expenseCategories = useMemo(() => {
-    const source = data.ganancias?.gastosPorCategoria;
+    const totalsByType = data.gastos.reduce((accumulator, item) => {
+      const type = item.tipoGasto || 'OTROS';
+      const currentTotal = accumulator.get(type) || 0;
+      accumulator.set(type, currentTotal + Number(item.monto ?? 0));
+      return accumulator;
+    }, new Map());
 
-    if (Array.isArray(source) && source.length > 0) {
-      return source.map((item, index) => ({
-        id: item.id ?? `${index + 1}`,
-        label: item.categoria ?? item.tipo ?? `Categoría ${index + 1}`,
-        value: Number(item.monto ?? item.valor ?? 0),
-      }));
-    }
+    return Array.from(totalsByType.entries()).map(([type, amount], index) => ({
+      id: index + 1,
+      label: getCatalogLabel(EXPENSE_TYPE_OPTIONS, type, type),
+      value: amount,
+    }));
+  }, [data.gastos]);
 
-    return [
-      { id: 1, label: 'Transporte', value: 35 },
-      { id: 2, label: 'Alimentación', value: 20 },
-      { id: 3, label: 'Envío', value: 25 },
-      { id: 4, label: 'Otros', value: 20 },
-    ];
-  }, [data.ganancias]);
+  const lowStockProducts = data.inventario?.productosStockBajo || [];
+  const inventorySummary = useMemo(
+    () => [
+      { label: 'Productos activos', value: formatNumber(data.inventario?.totalProductosActivos ?? 0) },
+      { label: 'Unidades en stock', value: formatNumber(data.inventario?.totalUnidadesStock ?? 0) },
+      { label: 'Valor a costo', value: formatCurrency(data.inventario?.valorInventarioCosto ?? 0) },
+      { label: 'Valor a venta', value: formatCurrency(data.inventario?.valorInventarioVenta ?? 0) },
+      { label: 'Ventas mensuales', value: formatCurrency(data.ventas?.totalVentasMensuales ?? 0) },
+      { label: 'Ventas anuales', value: formatCurrency(data.ventas?.totalVentasAnuales ?? 0) },
+    ],
+    [data.inventario, data.ventas],
+  );
 
   return (
     <Grid container spacing={3}>
@@ -131,8 +143,8 @@ export default function Reportes() {
               {tab === 0 && (
                 <BarChart
                   height={320}
-                  xAxis={[{ scaleType: 'band', data: monthlyProfit.map((item) => item.periodo) }]}
-                  series={[{ data: monthlyProfit.map((item) => Number(item.valor ?? item.ganancia ?? 0)), color: '#1976d2' }]}
+                  xAxis={[{ scaleType: 'band', data: profitBars.map((item) => item.periodo) }]}
+                  series={[{ data: profitBars.map((item) => item.valor), color: '#1976d2' }]}
                   margin={{ left: 60, right: 20, top: 10, bottom: 30 }}
                 />
               )}
@@ -141,8 +153,8 @@ export default function Reportes() {
                 <Box sx={{ height: 320 }}>
                   <BarChart
                     height={320}
-                    xAxis={[{ scaleType: 'band', data: data.inventario.map((item) => item.producto) }]}
-                    series={[{ data: data.inventario.map((item) => item.existencias), color: '#009688' }]}
+                    xAxis={[{ scaleType: 'band', data: lowStockProducts.map((item) => item.producto) }]}
+                    series={[{ data: lowStockProducts.map((item) => item.existencias), color: '#009688' }]}
                     margin={{ left: 60, right: 20, top: 10, bottom: 60 }}
                   />
                 </Box>
@@ -151,7 +163,7 @@ export default function Reportes() {
               {tab === 2 && (
                 <Stack spacing={2}>
                   <Typography variant="body2" color="text.secondary">
-                    Productos más vendidos
+                    Productos con mejor resultado
                   </Typography>
                   <PieChart
                     height={320}
@@ -160,7 +172,7 @@ export default function Reportes() {
                         data: bestSelling.map((item, index) => ({
                           id: index,
                           label: item.label,
-                          value: item.value,
+                          value: item.gain || item.value,
                         })),
                         innerRadius: 40,
                         outerRadius: 120,
@@ -202,9 +214,14 @@ export default function Reportes() {
               {bestSelling.map((item) => (
                 <Stack key={item.label} direction="row" justifyContent="space-between">
                   <Typography variant="body2">{item.label}</Typography>
-                  <Typography variant="body2" fontWeight={600}>
-                    {formatNumber(item.value)} unidades
-                  </Typography>
+                  <Stack alignItems="flex-end">
+                    <Typography variant="body2" fontWeight={600}>
+                      {formatNumber(item.value)} unidades
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {formatCurrency(item.gain)}
+                    </Typography>
+                  </Stack>
                 </Stack>
               ))}
             </Stack>
@@ -218,11 +235,21 @@ export default function Reportes() {
               Inventario consolidado
             </Typography>
             <Stack spacing={1.5}>
-              {data.inventario.slice(0, 5).map((item) => (
+              {lowStockProducts.slice(0, 3).map((item) => (
                 <Stack key={item.id} direction="row" justifyContent="space-between">
                   <Typography variant="body2">{item.producto}</Typography>
                   <Typography variant="body2" fontWeight={600}>
-                    {formatNumber(item.existencias)} en stock
+                    {formatNumber(item.existencias)} / min {formatNumber(item.stockMinimo)}
+                  </Typography>
+                </Stack>
+              ))}
+              {inventorySummary.map((item) => (
+                <Stack key={item.label} direction="row" justifyContent="space-between">
+                  <Typography variant="body2" color="text.secondary">
+                    {item.label}
+                  </Typography>
+                  <Typography variant="body2" fontWeight={600}>
+                    {item.value}
                   </Typography>
                 </Stack>
               ))}

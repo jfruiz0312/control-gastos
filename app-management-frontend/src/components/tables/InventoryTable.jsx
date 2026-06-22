@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import { InputAdornment, Paper, Stack, TextField } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
-import { formatNumber } from '../../utils/formatters';
+import { formatCurrency, formatNumber } from '../../utils/formatters';
+import { getCatalogLabel, PRODUCT_CATEGORY_OPTIONS } from '../../utils/catalogs';
 
 export default function InventoryTable({ rows }) {
   const [query, setQuery] = useState('');
@@ -26,27 +27,40 @@ export default function InventoryTable({ rows }) {
   const columns = [
     { field: 'codigo', headerName: 'Código', flex: 1, minWidth: 120 },
     { field: 'nombre', headerName: 'Producto', flex: 1.8, minWidth: 200 },
-    { field: 'categoria', headerName: 'Categoría', flex: 1, minWidth: 150 },
     {
-      field: 'entradas',
-      headerName: 'Entradas',
+      field: 'categoria',
+      headerName: 'Categoría',
+      flex: 0.9,
+      minWidth: 140,
+      valueFormatter: (value) => getCatalogLabel(PRODUCT_CATEGORY_OPTIONS, value, value || '—'),
+    },
+    {
+      field: 'stockActual',
+      headerName: 'Stock actual',
       flex: 0.9,
       minWidth: 120,
       valueFormatter: (value) => formatNumber(value),
     },
     {
-      field: 'salidas',
-      headerName: 'Salidas',
+      field: 'stockMinimo',
+      headerName: 'Stock mínimo',
       flex: 0.9,
       minWidth: 120,
       valueFormatter: (value) => formatNumber(value),
     },
     {
-      field: 'existencias',
-      headerName: 'Existencias',
+      field: 'valorCosto',
+      headerName: 'Valor costo',
       flex: 1,
-      minWidth: 130,
-      valueFormatter: (value) => formatNumber(value),
+      minWidth: 150,
+      valueFormatter: (value) => formatCurrency(value),
+    },
+    {
+      field: 'valorVenta',
+      headerName: 'Valor venta',
+      flex: 1,
+      minWidth: 150,
+      valueFormatter: (value) => formatCurrency(value),
     },
   ];
 

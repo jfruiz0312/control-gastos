@@ -15,11 +15,12 @@ import {
 import { Controller, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
+import { PRODUCT_CATEGORY_OPTIONS } from '../../utils/catalogs';
 
 const productSchema = yup.object({
   codigo: yup.string().required('El código es obligatorio'),
   nombre: yup.string().required('El nombre es obligatorio'),
-  descripcion: yup.string().required('La descripción es obligatoria'),
+  descripcion: yup.string(),
   categoria: yup.string().required('La categoría es obligatoria'),
   precioCompra: yup
     .number()
@@ -36,6 +37,11 @@ const productSchema = yup.object({
     .typeError('Debe ser un número válido')
     .min(0, 'No puede ser negativo')
     .required('El stock es obligatorio'),
+  stockMinimo: yup
+    .number()
+    .typeError('Debe ser un número válido')
+    .min(0, 'No puede ser negativo')
+    .required('El stock mínimo es obligatorio'),
   estado: yup.boolean().default(true),
 });
 
@@ -47,10 +53,9 @@ const defaultValues = {
   precioCompra: '',
   precioVenta: '',
   stock: 0,
+  stockMinimo: 0,
   estado: true,
 };
-
-const categoryOptions = ['Aseo', 'Bebidas', 'Comestibles', 'Hogar', 'Papelería', 'Tecnología', 'Otros'];
 
 export default function ProductFormDialog({ open, initialValues, onClose, onSubmit }) {
   const {
@@ -109,9 +114,9 @@ export default function ProductFormDialog({ open, initialValues, onClose, onSubm
                   error={Boolean(errors.categoria)}
                   helperText={errors.categoria?.message}
                 >
-                  {categoryOptions.map((option) => (
-                    <MenuItem key={option} value={option}>
-                      {option}
+                  {PRODUCT_CATEGORY_OPTIONS.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
                     </MenuItem>
                   ))}
                 </TextField>
@@ -166,7 +171,23 @@ export default function ProductFormDialog({ open, initialValues, onClose, onSubm
               )}
             />
           </Grid>
-          <Grid size={{ xs: 12, md: 8 }}>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Controller
+              name="stockMinimo"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Stock mínimo"
+                  type="number"
+                  fullWidth
+                  error={Boolean(errors.stockMinimo)}
+                  helperText={errors.stockMinimo?.message}
+                />
+              )}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, md: 4 }}>
             <Controller
               name="estado"
               control={control}
